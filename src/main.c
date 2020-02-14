@@ -1,3 +1,7 @@
+//----------------------------------------------------------------------------------------------------------------------
+// Forked from the iq/rgba 1k OpenGL intro system at https://www.iquilezles.org/code/isystem1k4k/isystem1k4k.htm
+//----------------------------------------------------------------------------------------------------------------------
+
 #define WIN32_LEAN_AND_MEAN
 #define WIN32_EXTRA_LEAN
 #include <windows.h>
