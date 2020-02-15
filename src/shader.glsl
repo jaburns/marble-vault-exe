@@ -1,7 +1,7 @@
 // ====================================================================================================================
 //   JS/GLSL shared state buffer
 // ====================================================================================================================
-//   array[ 0] : g[0].x : W  : 100000 * canvas width + canvas height
+//   array[ 0] : g[0].x : W  : track number
 //   array[ 1] : g[0].y : W  : previous camera offset x
 //   array[ 2] : g[0].z : W  : key input flags
 //   array[ 3] : g[0].w : W  : camera offset x
@@ -15,10 +15,10 @@
 //   array[11] : g[2].w : RW : lower vel.y
 //   array[12] : g[3].x : RW : ball angle
 //   array[13] : g[3].y : RW : ball angular velocity
-//   array[14] : g[3].z : W  : track number
+//   array[14] : g[3].z :      unused
 //   array[15] : g[3].w : RW : jump grace counter
 //
-uniform mat4 g;
+uniform ivec4 g[4];
 
 float track; // Track number
 float angle; // Rotation of the marble in radians
@@ -40,9 +40,9 @@ vec2 writeFloat(float a)
 }
 
 // Parse a two-byte fixed-point number in to a float in the range [-1,1)
-float readFloat(vec2 a)
+float readFloat(ivec2 a)
 {
-    return (a.x/255. + a.y/255./255.) * 2. - 1.;
+    return (float(a.x)/255. + float(a.y)/255./255.) * 2. - 1.;
 }
 
 // ====================================================================================================================
@@ -134,8 +134,7 @@ vec3 draw(vec2 coord)
 
     bool dusk = mod(track, 2.) < 1.;
 
-    vec2 dims = vec2(floor(g[0].x/1e5), mod(g[0].x,1e5));
-    vec2 m = (coord - dims * .5) / dims.y; // Normalized screen coordinates
+    vec2 m = (coord - vec2(1280,720) * .5) / 720.; // Normalized screen coordinates
 
     float groundHue = fract(.2+track*.1);
     float d = length(40.*m - (dusk ? vec2(15,7) : vec2(15))); // Scaled distance to the sun
@@ -155,7 +154,7 @@ vec3 draw(vec2 coord)
     );
 
     // Translate to the camera position, and adjust camera scale and offset
-    m.x += g[0].y;
+    m.x += float(g[0].y) / 32768.;
     m *= 3.5;
     m.y -= .9;
 
@@ -174,7 +173,7 @@ vec3 draw(vec2 coord)
         // uv = 1.*m - 0.*vec2(g[0].w-99.,-.2)
         // uv = 2.*m - 3.*vec2(g[0].w-99.,-.1)
         // uv = 4.*m - 8.*vec2(g[0].w-99.,  0)
-        vec2 uv = pow(2.,i)*m - (pow(i+1.,2.)-1.) * vec2(g[0].w-99.,.1*i-.2);
+        vec2 uv = pow(2.,i)*m - (pow(i+1.,2.)-1.) * vec2(float(g[0].w)/32768.-99.,.1*i-.2);
         vec2 norm = getNorm(uv);
         d = map(uv);
 
@@ -216,17 +215,19 @@ vec3 draw(vec2 coord)
 
 void main()
 {
-    float counter = g[3].w;
+    // TODO cast g[0] as vec4 and write to global to avoid a bunch of float casts
 
-    angle = .0246 * g[3].x; // 0.0246 = 2 * pi / 255
-    omega = 2. * g[3].y / 255. - 1.;
-    track = g[3].z;
+    float counter = float(g[3].w);
+
+    angle = .0246 * float(g[3].x); // 0.0246 = 2 * pi / 255
+    omega = 2. * float(g[3].y) / 255. - 1.;
+    track = float(g[0].x);
 
     vec2 coord = gl_FragCoord.xy;
     vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
 
     pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
-    pos.x += g[0].y;
+    pos.x += float(g[0].y) / 32768.;
     pos *= 3.5;
 
     // Get the screen color for this pixel with 4x MSAA
@@ -255,20 +256,20 @@ void main()
             }
             counter = 0.;
         } else {
-            if (g[0].z > 1.) {
+            if (g[0].z > 1) {
                 vel.y = -1.;
                 omega = 0.;
             }
             if (counter < 7.) counter++;
         }
 
-        if (counter < 7. && mod(g[0].z, 2.) > 0.) {
+        if (counter < 7. && mod(float(g[0].z), 2.) > 0.) {
             counter = 7.;
             vel.y = max(.5,vel.y+.5);
         }
 
         pos /= 3.5;
-        pos.x -= g[0].w;
+        pos.x -= float(g[0].w)/32768.;
 
         gl_FragColor =
             coord.x < 2. ? vec4(writeFloat(pos.x), writeFloat(pos.y)) : // g[1]
