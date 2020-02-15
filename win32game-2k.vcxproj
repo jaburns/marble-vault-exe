@@ -67,6 +67,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BrowseInformation>true</BrowseInformation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>MinSpace</Optimization>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -82,8 +83,8 @@
     </Link>
     <Bscmake />
     <PreBuildEvent>
-      <Command>$(SolutionDir)shader_minifier.exe -o $(SolutionDir)src\shader.h $(SolutionDir)src\shader.glsl
-echo DID RUN</Command>
+      <Command>$(SolutionDir)shader_minifier.exe --preserve-externals -o $(SolutionDir)src\shader.h $(SolutionDir)src\shader.glsl
+powershell.exe -noprofile -command "(Get-Content $(SolutionDir)src\shader.h) -replace 'uniform', 'precision highp float;uniform' | Set-Content $(SolutionDir)src\shader.h"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -96,7 +97,7 @@ echo DID RUN</Command>
       <HeaderFileName />
     </Midl>
     <ClCompile>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>MinSpace</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
@@ -115,6 +116,7 @@ echo DID RUN</Command>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -130,11 +132,12 @@ echo DID RUN</Command>
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalOptions>/CRINKLER /HASHTRIES:300 /COMPMODE:SLOW /ORDERTRIES:4000  /UNALIGNCODE /REPORT:.\exe\out.html %(AdditionalOptions)</AdditionalOptions>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
     <Bscmake />
     <PreBuildEvent>
-      <Command>$(SolutionDir)shader_minifier.exe -o $(SolutionDir)src\shader.h $(SolutionDir)src\shader.glsl
-echo DID RUN</Command>
+      <Command>$(SolutionDir)shader_minifier.exe --preserve-externals -o $(SolutionDir)src\shader.h $(SolutionDir)src\shader.glsl
+powershell.exe -noprofile -command "(Get-Content $(SolutionDir)src\shader.h) -replace 'uniform', 'precision highp float;uniform' | Set-Content $(SolutionDir)src\shader.h"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -150,11 +153,9 @@ echo DID RUN</Command>
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\shader.glsl">
-      <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</DeploymentContent>
+      <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</DeploymentContent>
     </Text>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

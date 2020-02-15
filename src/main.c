@@ -6,6 +6,7 @@
 #define WIN32_EXTRA_LEAN
 #include <windows.h>
 #include <GL/gl.h>
+#include "fp.h"
 #include <math.h>
 #include "glext.h"
 
@@ -16,7 +17,35 @@
 
 //extern "C" int _fltused = 0;
 
-const static PIXELFORMATDESCRIPTOR pfd = {0,0,PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+const static PIXELFORMATDESCRIPTOR pfd = {
+    0,
+    0,
+    PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER,
+    0, // pixeltype
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    8,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+}
+;
 
 #ifdef _DEBUG
 
@@ -83,31 +112,72 @@ void entrypoint( void )
 
     GLchar infolog[1000];
     GLsizei infolen;
-    int p = oglCreateProgram();
+    int program = oglCreateProgram();
     int f = oglCreateShader(GL_FRAGMENT_SHADER);	
     oglShaderSource(f, 1, &shader_glsl, 0);
     oglCompileShader(f);
     oglGetShaderInfoLog(f, 1000, &infolen, infolog);
-    oglAttachShader(p,f);
-    oglLinkProgram(p);
-    oglUseProgram(p);
+    oglAttachShader(program,f);
+    oglLinkProgram(program);
+    oglUseProgram(program);
 
 #else
 
-    ((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))(
-        ((PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress("glCreateShaderProgramv"))( 
-            GL_FRAGMENT_SHADER, 1, &shader_glsl
-        )
-    );
+    int program = ((PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress("glCreateShaderProgramv"))( GL_FRAGMENT_SHADER, 1, &shader_glsl );
+    ((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))( program );
 
 #endif
 
-    do { 
-        glColor3us( (unsigned short)GetTickCount(), GetAsyncKeyState( VK_UP ), 0 );
-        glRects( -1, -1, 1, 1 );
-        SwapBuffers( hDC );
+    int track = 1;
+
+    for(;;)
+    {
+        float g[] = {
+            p0d00,p0d00,p0d00,p0d00,
+            128.0f,p1d00,128.0f,p1d00,
+            255.0f,p1d00,192.0f,p1d00,
+            p0d00,100.0f,p0d00,7.0f
+        };
+        unsigned char buffer[64];
+
+        float $ballPos = 0.0f;
+        float $cameraOffset = 0.0f;
+        float $camFromBall = 0.0f;
+
+        for(;;)
+        {
+            if( GetAsyncKeyState( VK_ESCAPE )) ExitProcess( 0 );
+            if( GetAsyncKeyState( 'R' )) break;
+            if( GetAsyncKeyState( 'N' )) { track++; if (track > 10) track = 1; break; }
+
+            g[0] = 100000.0f*(float)XRES + (float)YRES;
+            g[2] = (GetAsyncKeyState(VK_UP)?1:0) + (GetAsyncKeyState(VK_DOWN)?2:0);
+            g[14] = (float)track;
+            g[1] = $cameraOffset;
+
+            float $ballVelX = (g[8]/255.0f + g[9]/255.0f/255.0f) * 2.0f - 1.0f;
+            $ballPos += $ballVelX * 0.05f / 3.5f;
+            $camFromBall += ($ballVelX / 3.0f - $camFromBall) / 99.0f;
+            $cameraOffset = $camFromBall + $ballPos;
+
+            g[3] = $cameraOffset;
+
+            ((PFNGLUNIFORMMATRIX4FVPROC)wglGetProcAddress("glUniformMatrix4fv"))(
+                ((PFNGLGETUNIFORMLOCATIONPROC)wglGetProcAddress("glGetUniformLocation"))( program, "g" ),
+                1, 0, g
+            );
+
+            glRects( -1, -1, 1, 1 );
+
+            glReadPixels( 0, 0, 4, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
+            for( int i = 0; i < 4*16; ++i )
+                g[i] = (float)buffer[i];
+
+            SwapBuffers( hDC );
+        }
     }
-    while( !GetAsyncKeyState( VK_ESCAPE ) );
 
     ExitProcess( 0 );
+
+//  glColor3us( (unsigned short)GetTickCount(), GetAsyncKeyState( VK_UP ), 0 );
 }
