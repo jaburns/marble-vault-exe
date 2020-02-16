@@ -1,4 +1,4 @@
-## [Marble Vault](https://jaburns.itch.io/marble-vault) (Win32 version)
+## [Marble Vault](https://jaburns.itch.io/marble-vault) (Win32 2k version)
 
 #### Controls
 - **Up:** Jump
