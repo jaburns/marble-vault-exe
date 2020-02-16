@@ -1,4 +1,5 @@
 /bin
-/exe
+/exe/*.html
+/exe/*.asm
 /.vs
 *.vcxproj.user
