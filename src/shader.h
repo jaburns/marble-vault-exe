@@ -5,7 +5,7 @@
 # define SHADER_H_
 
 const char *shader_glsl =
- "precision highp float;uniform ivec4 g[4];"
+ "uniform ivec4 g[4];"
  "float v,f,m;"
  "vec2 y;"
  "vec2 t(float y)"

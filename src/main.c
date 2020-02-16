@@ -6,8 +6,6 @@
 #define WIN32_EXTRA_LEAN
 #include <windows.h>
 #include <GL/gl.h>
-#include "fp.h"
-#include <math.h>
 #include "glext.h"
 
 #define XRES 1280
@@ -15,92 +13,65 @@
 
 #include "shader.h"
 
-//extern "C" int _fltused = 0;
+#define oglCreateProgram        ((PFNGLCREATEPROGRAMPROC)        wglGetProcAddress("glCreateProgram"))
+#define oglCreateShader         ((PFNGLCREATESHADERPROC)         wglGetProcAddress("glCreateShader"))
+#define oglCreateShaderProgramv ((PFNGLCREATESHADERPROGRAMVPROC) wglGetProcAddress("glCreateShaderProgramv"))
+#define oglShaderSource         ((PFNGLSHADERSOURCEPROC)         wglGetProcAddress("glShaderSource"))
+#define oglCompileShader        ((PFNGLCOMPILESHADERPROC)        wglGetProcAddress("glCompileShader"))
+#define oglAttachShader         ((PFNGLATTACHSHADERPROC)         wglGetProcAddress("glAttachShader"))
+#define oglLinkProgram          ((PFNGLLINKPROGRAMPROC)          wglGetProcAddress("glLinkProgram"))
+#define oglUseProgram           ((PFNGLUSEPROGRAMPROC)           wglGetProcAddress("glUseProgram"))
+#define oglGetShaderInfoLog     ((PFNGLGETSHADERINFOLOGPROC)     wglGetProcAddress("glGetShaderInfoLog"))
+#define oglUniform4iv           ((PFNGLUNIFORM4IVPROC)           wglGetProcAddress("glUniform4iv"))
+#define oglGetUniformLocation   ((PFNGLGETUNIFORMLOCATIONPROC)   wglGetProcAddress("glGetUniformLocation"))
 
-const static PIXELFORMATDESCRIPTOR pfd = { 0, 0, PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER, 0, 0, 0, 0, 0, 0, 0, 0,
+const static PIXELFORMATDESCRIPTOR pfd = {
+    0, 0, PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER, 0, 0, 0, 0, 0, 0, 0, 0,
     8, // alpha channel bits
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-#ifdef _DEBUG
-
-const static char *funcNames[] = {
-    "glCreateProgram",
-    "glCreateShader",
-    "glShaderSource",
-    "glCompileShader",
-    "glAttachShader",
-    "glLinkProgram",
-    "glUseProgram",
-    "glGetShaderInfoLog"
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static void *funcPtrs[8];
-
-#define oglCreateProgram    ((PFNGLCREATEPROGRAMPROC)funcPtrs[0])
-#define oglCreateShader     ((PFNGLCREATESHADERPROC)funcPtrs[1])
-#define oglShaderSource     ((PFNGLSHADERSOURCEPROC)funcPtrs[2])
-#define oglCompileShader    ((PFNGLCOMPILESHADERPROC)funcPtrs[3])
-#define oglAttachShader     ((PFNGLATTACHSHADERPROC)funcPtrs[4])
-#define oglLinkProgram      ((PFNGLLINKPROGRAMPROC)funcPtrs[5])
-#define oglUseProgram       ((PFNGLUSEPROGRAMPROC)funcPtrs[6])
-#define oglGetShaderInfoLog ((PFNGLGETSHADERINFOLOGPROC)funcPtrs[7])
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{ 
-    RECT rec = { 0, 0, XRES, YRES };
-    WNDCLASS wc;
-
-    ZeroMemory( &wc, sizeof(WNDCLASS) );
-    wc.style         = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
-    wc.lpfnWndProc   = DefWindowProc;
-    wc.hInstance     = hPrevInstance;
-    wc.lpszClassName = "jb";
-    RegisterClass( &wc );
-
-    const int dws = WS_VISIBLE | WS_CAPTION | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_SYSMENU;
-    AdjustWindowRect( &rec, dws, 0 );
-    HWND hWnd = CreateWindowEx( WS_EX_APPWINDOW | WS_EX_WINDOWEDGE, wc.lpszClassName, "win32game-2k", dws,
-                               (GetSystemMetrics(SM_CXSCREEN)-rec.right+rec.left)>>1,
-                               (GetSystemMetrics(SM_CYSCREEN)-rec.bottom+rec.top)>>1,
-                               rec.right-rec.left, rec.bottom-rec.top, 0, 0, hPrevInstance, 0 );
-    HDC hDC = GetDC( hWnd );
-
+#ifdef _DEBUG
+int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 #else
-
 void entrypoint( void )
-{ 
-    DEVMODE screenSettings = {{0},0,0,156,0,0x001c0000,{0},0,0,0,0,0,{0},0,32,XRES,YRES,{0},0,0,0,0,0,0,0,0,0};
-    ChangeDisplaySettings( &screenSettings, CDS_FULLSCREEN );
-    ShowCursor( 0 );
-    HDC hDC = GetDC( CreateWindow( "edit", 0, WS_POPUP|WS_VISIBLE|WS_MAXIMIZE, 0,0,0,0,0,0,0,0 ));
-
 #endif
+{ 
+    HDC hDC = GetDC( CreateWindow( "edit", 0, WS_POPUP|WS_VISIBLE,
+        GetSystemMetrics(SM_CXSCREEN)/2-640,
+        GetSystemMetrics(SM_CYSCREEN)/2-360,
+        1280,
+        720,
+        0,0,0,0
+    ));
 
     SetPixelFormat( hDC, ChoosePixelFormat( hDC, &pfd ), &pfd );
     wglMakeCurrent( hDC, wglCreateContext( hDC ));
 
 #ifdef _DEBUG
 
-    for( int i = 0; i < (sizeof(funcPtrs)/sizeof(void*)); i++ )
-        funcPtrs[i] = wglGetProcAddress( funcNames[i] );
-
     GLchar infolog[1000];
     GLsizei infolen;
     int program = oglCreateProgram();
-    int f = oglCreateShader(GL_FRAGMENT_SHADER);	
-    oglShaderSource(f, 1, &shader_glsl, 0);
-    oglCompileShader(f);
-    oglGetShaderInfoLog(f, 1000, &infolen, infolog);
-    oglAttachShader(program,f);
-    oglLinkProgram(program);
-    oglUseProgram(program);
+    int f = oglCreateShader( GL_FRAGMENT_SHADER );	
+    oglShaderSource( f, 1, &shader_glsl, 0 );
+    oglCompileShader( f );
+    oglGetShaderInfoLog( f, 1000, &infolen, infolog );
+    oglAttachShader( program, f );
+    oglLinkProgram( program );
+    oglUseProgram( program );
+    OutputDebugString( infolog );
 
 #else
 
-    int program = ((PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress("glCreateShaderProgramv"))( GL_FRAGMENT_SHADER, 1, &shader_glsl );
-    ((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))( program );
+    int program = oglCreateShaderProgramv( GL_FRAGMENT_SHADER, 1, &shader_glsl );
+    oglUseProgram( program );
 
 #endif
+
+    int lastKeys[128];
+    int curKeys[128];
+    int edgeKeys[128];
 
     int track = 1;
 
@@ -114,31 +85,37 @@ void entrypoint( void )
         };
         unsigned char buffer[16];
 
+        int frames = 0;
         int ballPos = 0;
         int cameraOffset = 0;
         int camFromBall = 0;
 
         for(;;)
         {
-            if( GetAsyncKeyState( VK_ESCAPE )) ExitProcess( 0 );
-            if( GetAsyncKeyState( 'R' )) break;
-            if( GetAsyncKeyState( 'N' )) { track++; if (track > 10) track = 1; break; }
+            memcpy( lastKeys, curKeys, 128*sizeof(int) );
+            for( int i = 0; i < 128; ++i ) {
+                curKeys[i] = GetAsyncKeyState(i);
+                edgeKeys[i] = curKeys[i] && !lastKeys[i] ? 1 : 0;
+            }
+
+            if( edgeKeys[ 'R' ]) break;
+            if( track < 10 && edgeKeys[ 'N' ] ) { track++; break; }
+            if( track > 1  && edgeKeys[ 'P' ] ) { track--; break; }
+            if( edgeKeys[ VK_ESCAPE ]) ExitProcess( 0 );
 
             g[0] = track;
             g[1] = cameraOffset;
-            g[2] = (GetAsyncKeyState(VK_UP)?1:0) + (GetAsyncKeyState(VK_DOWN)?2:0);
+            g[2] = edgeKeys[VK_UP] + 2*edgeKeys[VK_DOWN];
 
             int ballVelX = (256*g[8] + g[9]) - 32768;
             ballPos += ballVelX / 70;
             camFromBall += (ballVelX / 3 - camFromBall) / 99;
             cameraOffset = camFromBall + ballPos;
+            frames++;
 
             g[3] = cameraOffset;
 
-            ((PFNGLUNIFORM4IVPROC)wglGetProcAddress("glUniform4iv"))(
-                ((PFNGLGETUNIFORMLOCATIONPROC)wglGetProcAddress("glGetUniformLocation"))( program, "g" ),
-                4, g
-            );
+            oglUniform4iv( oglGetUniformLocation( program, "g" ), 4, g );
 
             glRects( -1, -1, 1, 1 );
 
@@ -147,6 +124,15 @@ void entrypoint( void )
                 g[i] = buffer[i];
 
             SwapBuffers( hDC );
+
+            if( ballPos > 10 * 32768 )
+            {
+                char fmt[64];
+                wsprintfA(fmt, "Track %d: %d.%02d", track, frames / 60, 100 * (frames % 60) / 60);
+                MessageBoxA(0, fmt, "", 0);
+                if (++track > 10) track = 1;
+                break;
+            }
         }
     }
 

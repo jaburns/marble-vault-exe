@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>win32game-2k</ProjectName>
+    <ProjectName>marble-vault</ProjectName>
     <ProjectGuid>{6A8112AD-DEC2-41F4-A160-DA2DBEF4307A}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -58,7 +58,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\bin/Debug/win32game-2k_vc2015.tlb</TypeLibraryName>
+      <TypeLibraryName>.\bin/Debug/marble-vault-exe_vc2015.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -93,7 +93,7 @@ powershell.exe -noprofile -command "(Get-Content $(SolutionDir)src\shader.h) -re
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\bin/Release/win32game-2k_vc2015.tlb</TypeLibraryName>
+      <TypeLibraryName>.\bin/Release/marble-vault-exe_vc2015.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -114,9 +114,10 @@ powershell.exe -noprofile -command "(Get-Content $(SolutionDir)src\shader.h) -re
       <OmitFramePointers>true</OmitFramePointers>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <DebugInformationFormat>None</DebugInformationFormat>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <SmallerTypeCheck>false</SmallerTypeCheck>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -136,12 +137,10 @@ powershell.exe -noprofile -command "(Get-Content $(SolutionDir)src\shader.h) -re
     </Link>
     <Bscmake />
     <PreBuildEvent>
-      <Command>$(SolutionDir)shader_minifier.exe --preserve-externals -o $(SolutionDir)src\shader.h $(SolutionDir)src\shader.glsl
-powershell.exe -noprofile -command "(Get-Content $(SolutionDir)src\shader.h) -replace 'uniform', 'precision highp float;uniform' | Set-Content $(SolutionDir)src\shader.h"</Command>
+      <Command>$(SolutionDir)shader_minifier.exe --preserve-externals -o $(SolutionDir)src\shader.h $(SolutionDir)src\shader.glsl</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\fp.h" />
     <ClInclude Include="src\glext.h" />
     <ClInclude Include="src\shader.h" />
   </ItemGroup>

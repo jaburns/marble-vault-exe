@@ -215,8 +215,6 @@ vec3 draw(vec2 coord)
 
 void main()
 {
-    // TODO cast g[0] as vec4 and write to global to avoid a bunch of float casts
-
     float counter = float(g[3].w);
 
     angle = .0246 * float(g[3].x); // 0.0246 = 2 * pi / 255
